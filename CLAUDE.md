@@ -12,11 +12,9 @@ npm install
 npm run compile
 # → produces compiled/source/qxl.lsp/index.js
 
-# Install VS Code extension dependencies
-cd client && npm install
-
-# Package the extension as VSIX (requires: npm install -g @vscode/vsce)
-cd client && vsce package --out ../qxl-lsp-client.vsix
+# Package the extension as VSIX
+# Runs qx deploy first, then vsce package
+npm run package
 
 # Install the VSIX locally
 code --install-extension qxl-lsp-client.vsix

@@ -1,16 +1,42 @@
 {
-  "name": "qxl.lsp",
-  "version": "0.1.0",
+  "name": "qxl-lsp",
+  "displayName": "Qooxdoo Language Support",
   "description": "Qooxdoo Language Server Protocol implementation",
-  "main": "index.js",
+  "version": "0.1.0",
+  "publisher": "qooxdoo",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": ["Programming Languages"],
+  "activationEvents": [
+    "onLanguage:javascript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hkollmann/qxl.lsp.git"
+  },
+  "main": "extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "javascript",
+        "extensions": [".js"]
+      }
+    ]
+  },
   "scripts": {
-    "compile": "qx compile",
-    "start": "qx compile && node index.js"
+    "compile": "npx qx compile",
+    "start": "npx qx compile && node index.js",
+    "package": "npx qx deploy --clean && npx vsce package --out qxl-lsp-client.vsix"
   },
   "dependencies": {
-    "@qooxdoo/framework": "8.0.0-beta.3",
     "upath": "^2.0.1",
+    "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.11"
+  },
+  "devDependencies": {
+    "@qooxdoo/framework": "8.0.0-beta.3",
+    "@vscode/vsce": "^3.0.0"
   }
 }

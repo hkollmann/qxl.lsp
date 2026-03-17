@@ -13,7 +13,7 @@ let client;
  */
 function activate(context) {
   // Pfad zum kompilierten Server-Einstiegspunkt
-  const serverModule = path.join(__dirname, "..", "index.js");
+  const serverModule = path.join(__dirname, "index.js");
 
   const serverOptions = {
     run: {
