@@ -48,6 +48,49 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
     },
 
     /**
+     * Handles a textDocument/declaration LSP request.
+     * Walks the superClass chain to find the topmost (original) definition.
+     *
+     * @param {object} params - LSP DeclarationParams
+     * @param {qxl.lsp.Project} project - The loaded project instance
+     * @returns {object|null} LSP Location object or null
+     */
+    provideDeclaration(params, project) {
+      const fs = require("fs");
+
+      const filePath = this.__uriToPath(params.textDocument.uri);
+
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+
+      const content = fs.readFileSync(filePath, "utf-8");
+      const lines = content.split("\n");
+
+      const { className, memberName } = qxl.lsp.Util.getWordAtPosition(
+        lines,
+        params.position
+      );
+
+      if (!className) {
+        return null;
+      }
+
+      const definition = project.findSourceDefinition(className, memberName);
+      if (!definition) {
+        return null;
+      }
+
+      return {
+        uri: this.__pathToUri(definition.file),
+        range: {
+          start: { line: definition.line, character: 0 },
+          end: { line: definition.line, character: 0 }
+        }
+      };
+    },
+
+    /**
      * Converts an LSP file URI to a normalized filesystem path.
      *
      * @param {string} uri

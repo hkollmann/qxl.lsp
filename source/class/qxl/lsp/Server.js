@@ -51,7 +51,8 @@ qx.Class.define("qxl.lsp.Server", {
         return {
           capabilities: {
             textDocumentSync: TextDocumentSyncKind.Incremental,
-            definitionProvider: true
+            definitionProvider: true,
+            declarationProvider: true
           }
         };
       });
@@ -61,6 +62,13 @@ qx.Class.define("qxl.lsp.Server", {
           return null;
         }
         return definitionProvider.provideDefinition(params, project);
+      });
+
+      connection.onDeclaration(params => {
+        if (!project) {
+          return null;
+        }
+        return definitionProvider.provideDeclaration(params, project);
       });
 
       documents.listen(connection);

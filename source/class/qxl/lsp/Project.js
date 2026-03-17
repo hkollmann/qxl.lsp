@@ -113,6 +113,53 @@ qx.Class.define("qxl.lsp.Project", {
     },
 
     /**
+     * Finds the original (topmost ancestor) definition location for a member
+     * by walking up the superClass chain.
+     *
+     * @param {string} className - Fully-qualified qooxdoo class name.
+     * @param {string|null} memberName - Member name, or null for the class itself.
+     * @returns {{file: string, line: number}|null}
+     */
+    findSourceDefinition(className, memberName) {
+      const path = require("path");
+
+      if (!this.__db) {
+        return null;
+      }
+
+      let result = null;
+      let current = className;
+      const visited = new Set();
+
+      while (current && !visited.has(current)) {
+        visited.add(current);
+        const classData = this.__loadClass(current);
+        if (!classData) {
+          break;
+        }
+
+        let loc = null;
+        if (memberName) {
+          loc =
+            classData.members?.[memberName]?.location?.start ??
+            classData.statics?.[memberName]?.location?.start ??
+            classData.properties?.[memberName]?.location?.start ??
+            null;
+        }
+        loc = loc ?? (!memberName ? classData.location?.start ?? null : null);
+
+        if (loc) {
+          const absFile = path.resolve(path.join(this.__metaDir, classData.classFilename));
+          result = { file: absFile, line: loc.line - 1 };
+        }
+
+        current = classData.superClass ?? null;
+      }
+
+      return result;
+    },
+
+    /**
      * Returns the parsed class JSON for the given class name.
      * Reads from disk on first access, then serves from cache.
      * Returns null if the class is unknown or its JSON file is missing.
