@@ -1,0 +1,16 @@
+{
+  "name": "qxl.lsp",
+  "version": "0.1.0",
+  "description": "Qooxdoo Language Server Protocol implementation",
+  "main": "index.js",
+  "scripts": {
+    "compile": "qx compile",
+    "start": "qx compile && node index.js"
+  },
+  "dependencies": {
+    "@qooxdoo/framework": "8.0.0-beta.3",
+    "upath": "^2.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.11"
+  }
+}

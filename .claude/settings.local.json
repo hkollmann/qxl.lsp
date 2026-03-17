@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(cd:*)",
+      "Bash(node -e \"const fs=require\\(''''fs''''\\); const files=fs.readdirSync\\(''''compiled/meta/qxl/lsp''''\\); console.log\\(files\\);\")",
+      "Bash(node -e \"try { require\\(''''./compiled/source/qxl.lsp/index.js''''\\) } catch\\(e\\) { console.error\\(e.message\\) }\")",
+      "Bash(node -e \":*)",
+      "Bash(node -e \"require\\(''jsonc-parser''\\)\")",
+      "Bash(node -e \"require\\(''strip-json-comments''\\)\")",
+      "Bash(npm run:*)"
+    ]
+  }
+}

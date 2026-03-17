@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/client"],
+      "outFiles": ["${workspaceFolder}/client/**/*.js"]
+    },
+    {
+      "name": "Attach to LSP Server",
+      "type": "node",
+      "request": "attach",
+      "port": 6009,
+      "restart": true,
+      "outFiles": ["${workspaceFolder}/compiled/**/*.js"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Extension + Server",
+      "configurations": ["Launch Extension", "Attach to LSP Server"]
+    }
+  ]
+}

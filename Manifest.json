@@ -1,0 +1,19 @@
+{
+  "$schema": "https://qooxdoo.org/schema/Manifest-2-0-0.json",
+  "info": {
+    "name": "qxl.lsp",
+    "summary": "Qooxdoo Language Server Protocol implementation",
+    "license": "MIT",
+    "version": "0.1.0"
+  },
+  "provides": {
+    "namespace": "qxl.lsp",
+    "encoding": "utf-8",
+    "class": "source/class",
+    "resource": "source/resource",
+    "translation": "source/translation"
+  },
+  "requires": {
+    "@qooxdoo/framework": "^8.0.0"
+  }
+}

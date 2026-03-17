@@ -1,5 +1,4 @@
-cache
-cache-downloads
-inspector
-api
-source/inspector.html
+**/node_modules
+compiled
+lib
+/.claude/settings.local.json
