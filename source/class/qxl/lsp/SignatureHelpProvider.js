@@ -69,8 +69,8 @@ qx.Class.define("qxl.lsp.SignatureHelpProvider", {
       if (!classData) return null;
 
       const memberData =
-        classData?.members?.[info.memberName] ??
-        classData?.statics?.[info.memberName] ??
+        classData.members?.[info.memberName] ??
+        classData.statics?.[info.memberName] ??
         null;
 
       if (!memberData || memberData.type !== "function") return null;
@@ -80,12 +80,10 @@ qx.Class.define("qxl.lsp.SignatureHelpProvider", {
 
       const parameters = paramDefs.map(p => ({
         label: `${p.paramName}${p.optional ? "?" : ""}: ${p.type ?? "any"}`,
-        documentation: p.description ?? undefined
+        documentation: p.description
       }));
 
-      const paramStr = paramDefs
-        .map(p => `${p.paramName}${p.optional ? "?" : ""}: ${p.type ?? "any"}`)
-        .join(", ");
+      const paramStr = parameters.map(p => p.label).join(", ");
       const retDef = memberData.jsdoc?.["@return"]?.[0];
       const retStr = retDef?.type ? `: ${retDef.type}` : "";
       const signatureLabel = `${info.memberName}(${paramStr})${retStr}`;
