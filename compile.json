@@ -29,6 +29,9 @@
     "__dirname",
     "__filename"
   ],
+  "meta": {
+    "typescript": true
+  },
   "applications": [
     {
       "class": "qxl.lsp.Server",
