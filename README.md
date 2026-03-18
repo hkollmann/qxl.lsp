@@ -8,7 +8,8 @@ A Language Server Protocol (LSP) implementation for [Qooxdoo](https://qooxdoo.or
 - **Go to Declaration** — Jump to the topmost ancestor definition of an overridden member (`Alt+F12`)
 - **Find All References** — Locate every text occurrence of a class or member across all `.js` source files in the workspace (`Shift+F12`)
 - **Hover** — Display inline documentation (description, parameters, return type, deprecation notices, property constraints) when hovering over a symbol
-- **Completion** — IntelliSense for member names after `.` and class name prefix completion (triggered automatically while typing)
+- **Completion** — IntelliSense for member names after `.` with type-aware resolution (`this.`, `new ClassName()`, getter chains) and class name prefix completion (triggered automatically while typing)
+- **Signature Help** — Method parameter hints when typing `(` or `,`, showing parameter names, types, and documentation from JSDoc
 - **Document Symbols** — Populate the VS Code Outline panel and breadcrumbs with the class and its members for the active file
 - **Workspace Symbols** — Quick-navigate to any class in the workspace by name (`Ctrl+T`)
 - **Auto-reload** — The server watches the compiled meta database (`compiled/meta/db.json`) and reloads automatically when a `qx compile` run finishes
@@ -23,11 +24,12 @@ qxl.lsp/
 │   ├── Project.js                   # Workspace: compile.json → meta dir + fs.watch
 │   ├── MetaDatabase.js              # Loads db.json, resolves symbols
 │   ├── MUriHelper.js                # Mixin: URI ↔ path conversion
-│   ├── Util.js                      # Shared helpers (JSONC parser, word extraction)
+│   ├── Util.js                      # Shared helpers (JSONC parser, word extraction, type resolver)
 │   ├── DefinitionProvider.js        # textDocument/definition + declaration
 │   ├── ReferencesProvider.js        # textDocument/references
 │   ├── HoverProvider.js             # textDocument/hover
 │   ├── CompletionProvider.js        # textDocument/completion
+│   ├── SignatureHelpProvider.js     # textDocument/signatureHelp
 │   ├── DocumentSymbolsProvider.js   # textDocument/documentSymbol
 │   └── WorkspaceSymbolsProvider.js  # workspace/symbol
 ├── extension.js              # VS Code extension (LanguageClient)
@@ -93,6 +95,7 @@ Open the repo root in VS Code and press **F5** to launch an Extension Developmen
    - **Shift+F12** — Find All References
    - Hover the cursor — inline documentation
    - Type a class name or `.` after an identifier — auto-completion
+   - Type `(` or `,` inside a method call — parameter hints
 
 The server reloads the meta database automatically each time the Qooxdoo compiler finishes a build.
 
