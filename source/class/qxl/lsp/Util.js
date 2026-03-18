@@ -69,6 +69,58 @@ qx.Class.define("qxl.lsp.Util", {
       }
 
       return { word, cursorOffset: char - start };
+    },
+
+    /**
+     * Resolves a JavaScript expression to a Qooxdoo class name using regex heuristics.
+     * Handles the most common patterns without requiring an AST parser.
+     *
+     * Supported:
+     *   - Direct class name:    `qx.ui.core.Widget`      → `qx.ui.core.Widget`
+     *   - this:                 `this`                   → class from qx.Class.define in source
+     *   - Constructor:          `new qx.ui.form.Button()` → `qx.ui.form.Button`
+     *   - Method call chain:    `this.getLayout()`       → @return type of getLayout
+     *
+     * @param {string} expr - Expression to resolve (trimmed).
+     * @param {string} sourceText - Full source text of the current file.
+     * @param {qxl.lsp.MetaDatabase} db
+     * @param {number} depth - Recursion guard (max 3).
+     * @returns {string|null} Resolved class name or null.
+     */
+    resolveType(expr, sourceText, db, depth = 0) {
+      expr = expr.trim();
+      if (!expr || depth > 3) return null;
+
+      // Direct class name
+      if (db.getClassData(expr)) return expr;
+
+      // "this" → extract class from qx.Class.define in current file
+      if (expr === "this") {
+        const m = sourceText.match(/qx\.Class\.define\s*\(\s*["']([\w.]+)["']/);
+        return m ? m[1] : null;
+      }
+
+      // new ClassName(...) → ClassName
+      const newMatch = expr.match(/^new\s+([\w.]+)\s*(?:\([\s\S]*\))?$/);
+      if (newMatch) return newMatch[1];
+
+      // expr.method() → resolve type of expr, then look up @return of method
+      const callMatch = expr.match(/^([\s\S]+)\.([\w$]+)\s*\(\s*\)$/);
+      if (callMatch) {
+        const baseType = qxl.lsp.Util.resolveType(callMatch[1], sourceText, db, depth + 1);
+        if (!baseType) return null;
+        const info = db.getSymbolInfo(`${baseType}.${callMatch[2]}`);
+        if (!info || !info.memberName) return null;
+        const classData = db.getClassData(info.definedIn);
+        if (!classData) return null;
+        const memberData =
+          classData.members?.[info.memberName] ??
+          classData.statics?.[info.memberName] ??
+          null;
+        return memberData?.jsdoc?.["@return"]?.[0]?.type ?? null;
+      }
+
+      return null;
     }
   }
 });

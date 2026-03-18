@@ -49,22 +49,49 @@ qx.Class.define("qxl.lsp.CompletionProvider", {
       const line = lines[params.position.line] ?? "";
       const charBefore = line.slice(0, params.position.character);
 
-      // Case A: after "." — member completion for a known class
+      // Helper: build CompletionItems from a member list
+      const membersToItems = members =>
+        members.map(m => ({
+          label: m.name,
+          kind:
+            m.kind === "member"
+              ? CompletionItemKind.Method
+              : m.kind === "static"
+              ? CompletionItemKind.Function
+              : CompletionItemKind.Property,
+          detail: `(${m.kind}) from ${m.definedIn}`
+        }));
+
+      // Helper: resolve expression to members via TypeResolver
+      const resolveToMembers = expr => {
+        const typeName = qxl.lsp.Util.resolveType(expr, content, db);
+        if (!typeName) return null;
+        const members = db.getAllMembersForClass(typeName);
+        return members.length > 0 ? membersToItems(members) : null;
+      };
+
+      // Case A: after "." — member completion
+      // A1: plain dotted identifier: qx.log.Logger. or this.
       const dotMatch = charBefore.match(/([\w$][\w$.]*)\.$/);
       if (dotMatch) {
-        const members = db.getAllMembersForClass(dotMatch[1]);
-        if (members.length > 0) {
-          return members.map(m => ({
-            label: m.name,
-            kind:
-              m.kind === "member"
-                ? CompletionItemKind.Method
-                : m.kind === "static"
-                ? CompletionItemKind.Function
-                : CompletionItemKind.Property,
-            detail: `(${m.kind}) from ${m.definedIn}`
-          }));
-        }
+        const direct = db.getAllMembersForClass(dotMatch[1]);
+        if (direct.length > 0) return membersToItems(direct);
+        // Fallback: type-aware resolution (handles "this", etc.)
+        const resolved = resolveToMembers(dotMatch[1]);
+        if (resolved) return resolved;
+      }
+
+      // A2: call chain ending in ".": word.method(args). or new ClassName(args).
+      const callDotMatch = charBefore.match(/([\w$][\w$.]*\([^()]*\))\.$/);
+      if (callDotMatch) {
+        const resolved = resolveToMembers(callDotMatch[1]);
+        if (resolved) return resolved;
+      }
+
+      const newDotMatch = charBefore.match(/\b(new\s+[\w.]+\s*\([^()]*\))\.$/);
+      if (newDotMatch) {
+        const resolved = resolveToMembers(newDotMatch[1]);
+        if (resolved) return resolved;
       }
 
       // Case B: class name prefix completion
