@@ -3,6 +3,10 @@
  * Reads the compiled meta database instead of scanning source files.
  * Watches db.json for changes and reloads automatically.
  */
+
+const path = require("upath");
+      const fs = require("fs");
+
 qx.Class.define("qxl.lsp.Project", {
   extend: qx.core.Object,
 
@@ -32,12 +36,17 @@ qx.Class.define("qxl.lsp.Project", {
     __classCache: null,
 
     /**
+     * @returns {string} Absolute path to the workspace root.
+     */
+    getWorkspacePath() {
+      return this.__workspacePath;
+    },
+
+    /**
      * Determines the meta directory from compile.json, loads db.json into memory,
      * and sets up a file watcher to reload on changes.
      */
     load() {
-      const path = require("path");
-      const fs = require("fs");
 
       const compileJsonPath = path.join(this.__workspacePath, "compile.json");
       if (!fs.existsSync(compileJsonPath)) {
@@ -73,19 +82,19 @@ qx.Class.define("qxl.lsp.Project", {
     },
 
     /**
-     * Finds the definition location for a class name and optional member.
+     * Finds the definition location for a dotted word (e.g. "qx.core.Object.clone").
+     * Determines the class/member split by matching prefixes against db.classnames.
      *
-     * @param {string} className - Fully-qualified qooxdoo class name (e.g. "qx.core.Object").
-     * @param {string|null} memberName - Member/method/property name, or null for the class itself.
+     * @param {string} word - Full dotted identifier from the source.
      * @returns {{file: string, line: number}|null} File path and 0-based line number, or null.
      */
-    findDefinition(className, memberName) {
-      const path = require("path");
+    findDefinition(word) {
 
       if (!this.__db) {
         return null;
       }
 
+      const { className, memberName } = this.__resolveWord(word);
       const classData = this.__loadClass(className);
       if (!classData) {
         return null;
@@ -116,17 +125,15 @@ qx.Class.define("qxl.lsp.Project", {
      * Finds the original (topmost ancestor) definition location for a member
      * by walking up the superClass chain.
      *
-     * @param {string} className - Fully-qualified qooxdoo class name.
-     * @param {string|null} memberName - Member name, or null for the class itself.
+     * @param {string} word - Full dotted identifier from the source.
      * @returns {{file: string, line: number}|null}
      */
-    findSourceDefinition(className, memberName) {
-      const path = require("path");
-
+    findSourceDefinition(word) {
       if (!this.__db) {
         return null;
       }
 
+      const { className, memberName } = this.__resolveWord(word);
       let result = null;
       let current = className;
       const visited = new Set();
@@ -160,6 +167,25 @@ qx.Class.define("qxl.lsp.Project", {
     },
 
     /**
+     * Splits a dotted word into className and memberName by matching the longest
+     * prefix found in db.classnames.
+     *
+     * @param {string} word - Full dotted identifier (e.g. "qx.core.Object.clone").
+     * @returns {{className: string, memberName: string|null}}
+     */
+    __resolveWord(word) {
+      const parts = word.split(".");
+      for (let i = parts.length; i >= 1; i--) {
+        const candidate = parts.slice(0, i).join(".");
+        if (this.__db.classnames.includes(candidate)) {
+          const memberName = i < parts.length ? parts[i] : null;
+          return { className: candidate, memberName };
+        }
+      }
+      return { className: word, memberName: null };
+    },
+
+    /**
      * Returns the parsed class JSON for the given class name.
      * Reads from disk on first access, then serves from cache.
      * Returns null if the class is unknown or its JSON file is missing.
@@ -171,9 +197,6 @@ qx.Class.define("qxl.lsp.Project", {
       if (className in this.__classCache) {
         return this.__classCache[className];
       }
-
-      const path = require("path");
-      const fs = require("fs");
 
       if (!this.__db.classnames.includes(className)) {
         return (this.__classCache[className] = null);

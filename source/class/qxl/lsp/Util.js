@@ -22,12 +22,11 @@ qx.Class.define("qxl.lsp.Util", {
     },
 
     /**
-     * Extracts the word token at the given cursor position.
-     * Returns the full dotted identifier and splits it into className/memberName.
+     * Extracts the dotted identifier at the given cursor position.
      *
      * @param {string[]} lines - Array of source lines.
      * @param {{line: number, character: number}} position - LSP position (0-based).
-     * @returns {{word: string, className: string|null, memberName: string|null}}
+     * @returns {{word: string}}
      */
     getWordAtPosition(lines, position) {
       const line = lines[position.line] || "";
@@ -44,16 +43,10 @@ qx.Class.define("qxl.lsp.Util", {
 
       const word = line.slice(start, end);
       if (!word) {
-        return { word: "", className: null, memberName: null };
+        return { word: "" };
       }
 
-      const parts = word.split(".");
-      if (parts.length === 1) {
-        return { word, className: word, memberName: null };
-      }
-      const memberName = parts[parts.length - 1];
-      const className = parts.slice(0, -1).join(".");
-      return { word, className, memberName };
+      return { word };
     }
   }
 });

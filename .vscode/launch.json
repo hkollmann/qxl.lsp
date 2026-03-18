@@ -5,8 +5,8 @@
       "name": "Launch Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}/client"],
-      "outFiles": ["${workspaceFolder}/client/**/*.js"]
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/**/*.js"]
     },
     {
       "name": "Attach to LSP Server",
@@ -14,6 +14,7 @@
       "request": "attach",
       "port": 6009,
       "restart": true,
+      "timeout": 10000,
       "outFiles": ["${workspaceFolder}/compiled/**/*.js"]
     }
   ],

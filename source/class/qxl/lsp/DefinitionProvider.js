@@ -1,8 +1,11 @@
 /**
  * LSP go-to-definition handler for Qooxdoo classes and members.
  */
+const fs = require("fs");
+
 qx.Class.define("qxl.lsp.DefinitionProvider", {
   extend: qx.core.Object,
+  include: [qxl.lsp.MUriHelper],
 
   members: {
     /**
@@ -13,10 +16,8 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
      * @returns {object|null} LSP Location object or null
      */
     provideDefinition(params, project) {
-      const fs = require("fs");
-
-      const filePath = this.__uriToPath(params.textDocument.uri);
-
+      const filePath = this._uriToPath(params.textDocument.uri);
+      process.stdout.write(`[qxl.lsp.provideDefinition] called for file: ${filePath}\n`);
       if (!fs.existsSync(filePath)) {
         return null;
       }
@@ -24,22 +25,19 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
       const content = fs.readFileSync(filePath, "utf-8");
       const lines = content.split("\n");
 
-      const { className, memberName } = qxl.lsp.Util.getWordAtPosition(
-        lines,
-        params.position
-      );
-
-      if (!className) {
+      const { word } = qxl.lsp.Util.getWordAtPosition(lines, params.position);
+      process.stdout.write(`[qxl.lsp.provideDefinition] Extracted word: ${word}\n`);
+      if (!word) {
         return null;
       }
 
-      const definition = project.findDefinition(className, memberName);
+      const definition = project.findDefinition(word);
       if (!definition) {
         return null;
       }
 
       return {
-        uri: this.__pathToUri(definition.file),
+        uri: this._pathToUri(definition.file),
         range: {
           start: { line: definition.line, character: 0 },
           end: { line: definition.line, character: 0 }
@@ -56,10 +54,8 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
      * @returns {object|null} LSP Location object or null
      */
     provideDeclaration(params, project) {
-      const fs = require("fs");
-
-      const filePath = this.__uriToPath(params.textDocument.uri);
-
+      const filePath = this._uriToPath(params.textDocument.uri);
+      process.stdout.write(`[qxl.lsp.provideDeclaration] called for file: ${filePath}\n`);
       if (!fs.existsSync(filePath)) {
         return null;
       }
@@ -67,51 +63,24 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
       const content = fs.readFileSync(filePath, "utf-8");
       const lines = content.split("\n");
 
-      const { className, memberName } = qxl.lsp.Util.getWordAtPosition(
-        lines,
-        params.position
-      );
-
-      if (!className) {
+      const { word } = qxl.lsp.Util.getWordAtPosition(lines, params.position);
+      process.stdout.write(`[qxl.lsp.provideDeclaration] Extracted word: ${word}\n`);
+      if (!word) {
         return null;
       }
 
-      const definition = project.findSourceDefinition(className, memberName);
+      const definition = project.findSourceDefinition(word);
       if (!definition) {
         return null;
       }
 
       return {
-        uri: this.__pathToUri(definition.file),
+        uri: this._pathToUri(definition.file),
         range: {
           start: { line: definition.line, character: 0 },
           end: { line: definition.line, character: 0 }
         }
       };
-    },
-
-    /**
-     * Converts an LSP file URI to a normalized filesystem path.
-     *
-     * @param {string} uri
-     * @returns {string}
-     */
-    __uriToPath(uri) {
-      const upath = require("upath");
-      const { fileURLToPath } = require("url");
-      return upath.normalize(fileURLToPath(uri));
-    },
-
-    /**
-     * Converts a filesystem path to an LSP file URI.
-     *
-     * @param {string} filePath
-     * @returns {string}
-     */
-    __pathToUri(filePath) {
-      const upath = require("upath");
-      const { pathToFileURL } = require("url");
-      return pathToFileURL(upath.normalize(filePath)).toString();
     }
   }
 });

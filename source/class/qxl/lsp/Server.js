@@ -31,15 +31,16 @@ qx.Class.define("qxl.lsp.Server", {
 
       let project = null;
       const definitionProvider = new qxl.lsp.DefinitionProvider();
+      const referencesProvider = new qxl.lsp.ReferencesProvider();
 
       connection.onInitialize(params => {
         const workspaceFolders = params.workspaceFolders;
         if (workspaceFolders && workspaceFolders.length > 0) {
           const wsUri = workspaceFolders[0].uri;
-          const upath = require("upath");
+          const path = require("upath");
           const { fileURLToPath } = require("url");
-          const wsPath = upath.normalize(fileURLToPath(wsUri));
-
+          const wsPath = path.normalize(fileURLToPath(wsUri));
+          process.stdout.write(`[qxl.lsp] Initializing project for workspace folder: ${wsPath}\n`);
           project = new qxl.lsp.Project(wsPath);
           try {
             project.load();
@@ -52,7 +53,8 @@ qx.Class.define("qxl.lsp.Server", {
           capabilities: {
             textDocumentSync: TextDocumentSyncKind.Incremental,
             definitionProvider: true,
-            declarationProvider: true
+            declarationProvider: true,
+            referencesProvider: true
           }
         };
       });
@@ -61,14 +63,36 @@ qx.Class.define("qxl.lsp.Server", {
         if (!project) {
           return null;
         }
-        return definitionProvider.provideDefinition(params, project);
+        try {
+          return definitionProvider.provideDefinition(params, project);
+        } catch (e) {
+          process.stderr.write(`[qxl.lsp] definitionProvider.provideDefinition() failed: ${e.message}\n`);
+          return null;
+        }
       });
 
       connection.onDeclaration(params => {
         if (!project) {
           return null;
         }
-        return definitionProvider.provideDeclaration(params, project);
+        try {
+          return definitionProvider.provideDeclaration(params, project);
+        } catch (e) {
+          process.stderr.write(`[qxl.lsp] definitionProvider.provideDeclaration() failed: ${e.message}\n`);
+          return null;
+        }
+      });
+
+      connection.onReferences(params => {
+        if (!project) {
+          return null;
+        }
+        try {
+          return referencesProvider.provideReferences(params, project);
+        } catch (e) {
+          process.stderr.write(`[qxl.lsp] referencesProvider.provideReferences() failed: ${e.message}\n`);
+          return null;
+        }
       });
 
       documents.listen(connection);

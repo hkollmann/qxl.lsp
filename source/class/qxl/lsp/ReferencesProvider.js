@@ -1,0 +1,101 @@
+/**
+ * LSP find-references handler for Qooxdoo classes and members.
+ * Searches all JS source files in the workspace for text occurrences.
+ */
+qx.Class.define("qxl.lsp.ReferencesProvider", {
+  extend: qx.core.Object,
+  include: [qxl.lsp.MUriHelper],
+
+  members: {
+    /**
+     * Handles a textDocument/references LSP request.
+     *
+     * @param {object} params - LSP ReferenceParams
+     * @param {qxl.lsp.Project} project - The loaded project instance
+     * @returns {object[]|null} Array of LSP Location objects or null
+     */
+    provideReferences(params, project) {
+      const fs = require("fs");
+
+      const filePath = this._uriToPath(params.textDocument.uri);
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+
+      const content = fs.readFileSync(filePath, "utf-8");
+      const lines = content.split("\n");
+
+      const { word } = qxl.lsp.Util.getWordAtPosition(lines, params.position);
+      process.stdout.write(`[qxl.lsp.provideReferences] word: ${word}\n`);
+      if (!word) {
+        return null;
+      }
+
+      const wsPath = project.getWorkspacePath();
+      const jsFiles = this.__collectJsFiles(wsPath);
+      const results = [];
+
+      for (const file of jsFiles) {
+        let fileContent;
+        try {
+          fileContent = fs.readFileSync(file, "utf-8");
+        } catch (_) {
+          continue;
+        }
+        const fileLines = fileContent.split("\n");
+        for (let i = 0; i < fileLines.length; i++) {
+          const line = fileLines[i];
+          let idx = 0;
+          while (true) {
+            const pos = line.indexOf(word, idx);
+            if (pos === -1) break;
+            results.push({
+              uri: this._pathToUri(file),
+              range: {
+                start: { line: i, character: pos },
+                end: { line: i, character: pos + word.length }
+              }
+            });
+            idx = pos + word.length;
+          }
+        }
+      }
+
+      process.stdout.write(`[qxl.lsp.provideReferences] found ${results.length} references\n`);
+      return results;
+    },
+
+    /**
+     * Recursively collects all .js files under dir, skipping common non-source dirs.
+     *
+     * @param {string} dir
+     * @returns {string[]}
+     */
+    __collectJsFiles(dir) {
+      const fs = require("fs");
+      const path = require("path");
+      const excluded = new Set(["node_modules", "compiled", "build", ".git"]);
+      const results = [];
+
+      const walk = d => {
+        let entries;
+        try {
+          entries = fs.readdirSync(d, { withFileTypes: true });
+        } catch (_) {
+          return;
+        }
+        for (const e of entries) {
+          if (excluded.has(e.name)) continue;
+          const full = path.join(d, e.name);
+          if (e.isDirectory()) {
+            walk(full);
+          } else if (e.name.endsWith(".js")) {
+            results.push(full);
+          }
+        }
+      };
+      walk(dir);
+      return results;
+    }
+  }
+});

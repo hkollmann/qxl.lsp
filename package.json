@@ -9,7 +9,7 @@
   },
   "categories": ["Programming Languages"],
   "activationEvents": [
-    "onLanguage:javascript"
+    "workspaceContains:compile.json"
   ],
   "repository": {
     "type": "git",
