@@ -59,6 +59,7 @@ qx.Class.define("qxl.lsp.Server", {
       const documentSymbolsProvider = new qxl.lsp.DocumentSymbolsProvider();
       const completionProvider = new qxl.lsp.CompletionProvider();
       const workspaceSymbolsProvider = new qxl.lsp.WorkspaceSymbolsProvider();
+      const signatureHelpProvider = new qxl.lsp.SignatureHelpProvider();
 
       connection.onInitialize(params => {
         const workspaceFolders = params.workspaceFolders;
@@ -86,7 +87,8 @@ qx.Class.define("qxl.lsp.Server", {
             hoverProvider: true,
             documentSymbolProvider: true,
             completionProvider: { triggerCharacters: ["."] },
-            workspaceSymbolProvider: true
+            workspaceSymbolProvider: true,
+            signatureHelpProvider: { triggerCharacters: ["(", ","] }
           }
         };
       });
@@ -147,6 +149,16 @@ qx.Class.define("qxl.lsp.Server", {
           return completionProvider.provideCompletion(params, db);
         } catch (e) {
           process.stderr.write(`[qxl.lsp] completionProvider.provideCompletion() failed: ${e.message}\n`);
+          return null;
+        }
+      });
+
+      connection.onSignatureHelp(params => {
+        if (!db) return null;
+        try {
+          return signatureHelpProvider.provideSignatureHelp(params, db);
+        } catch (e) {
+          process.stderr.write(`[qxl.lsp] signatureHelpProvider.provideSignatureHelp() failed: ${e.message}\n`);
           return null;
         }
       });
