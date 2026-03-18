@@ -2,3 +2,5 @@
 compiled
 lib
 /.claude/settings.local.json
+/qxl-lsp-client.vsix
+/source/global.d.ts

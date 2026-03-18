@@ -27,10 +27,23 @@ There are no automated tests.
 This is a two-process LSP implementation:
 
 **Server** (`source/class/qxl/lsp/` + `compile.json` + `index.js`)
-A Qooxdoo Node.js application compiled with `qx compile`. The entry point `index.js` delegates to `compiled/source/qxl.lsp/index.js`. All four classes must be compiled before the server can run — editing source files requires a recompile.
+A Qooxdoo Node.js application compiled with `qx compile`. The entry point `index.js` delegates to `compiled/source/qxl.lsp/index.js`. All source classes must be compiled before the server can run — editing source files requires a recompile.
 
-**Client** (`client/`)
-A standard VS Code extension that spawns the server via `TransportKind.ipc`. `client/extension.js` creates a `LanguageClient` pointing at the repo root `index.js`.
+Server classes:
+- `Server.js` — application entry point, registers all LSP handlers
+- `Project.js` — resolves the meta directory from `compile.json`, owns the `MetaDatabase`, watches `db.json`
+- `MetaDatabase.js` — loads `db.json` and individual class JSONs, provides all symbol lookup methods
+- `MUriHelper.js` — mixin with `_uriToPath` / `_pathToUri` helpers (included by all providers)
+- `Util.js` — static helpers: JSONC reader, word-at-position extractor
+- `DefinitionProvider.js` — `textDocument/definition` + `textDocument/declaration`
+- `ReferencesProvider.js` — `textDocument/references`
+- `HoverProvider.js` — `textDocument/hover`
+- `CompletionProvider.js` — `textDocument/completion`
+- `DocumentSymbolsProvider.js` — `textDocument/documentSymbol`
+- `WorkspaceSymbolsProvider.js` — `workspace/symbol`
+
+**Client** (`extension.js` + `package.json` at repo root)
+A standard VS Code extension that spawns the server via `TransportKind.ipc`. `extension.js` creates a `LanguageClient` pointing at the repo root `index.js`.
 
 ### Key design decisions
 
@@ -53,9 +66,9 @@ Each class JSON (e.g. `compiled/meta/qx/core/Object.json`) contains a `classFile
 
 1. VS Code sends `textDocument/definition` to the client
 2. Client forwards to server via IPC
-3. `Server.onDefinition` → `DefinitionProvider.provideDefinition(params, project)`
-4. `DefinitionProvider` reads the current file, calls `Util.getWordAtPosition` to extract `{className, memberName}`
-5. `Project.findDefinition(className, memberName)` reads `{metaDir}/{className}.json`, resolves `classFilename`, returns `{file, line}`
+3. `Server.onDefinition` → `DefinitionProvider.provideDefinition(params, db)`
+4. `DefinitionProvider` reads the current file, calls `Util.getWordAtPosition` to extract the dotted word at the cursor
+5. `MetaDatabase.findDefinition(word)` calls `resolveWord` to split into `{className, memberName}`, reads `{metaDir}/{className}.json`, returns `{file, line}` (0-based)
 6. `DefinitionProvider` converts the file path to a URI and returns an LSP `Location`
 
 ### Auto-reload

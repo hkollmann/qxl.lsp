@@ -4,8 +4,10 @@
 qx.Mixin.define("qxl.lsp.MUriHelper", {
   members: {
     /**
-     * @param {string} uri
-     * @returns {string}
+     * Converts a file URI to a normalized filesystem path.
+     *
+     * @param {string} uri - A file URI (e.g. `file:///C:/project/src/Foo.js`)
+     * @returns {string} Normalized absolute filesystem path
      */
     _uriToPath(uri) {
       const upath = require("upath");
@@ -14,8 +16,10 @@ qx.Mixin.define("qxl.lsp.MUriHelper", {
     },
 
     /**
-     * @param {string} filePath
-     * @returns {string}
+     * Converts a filesystem path to a file URI.
+     *
+     * @param {string} filePath - Absolute filesystem path
+     * @returns {string} Corresponding file URI (e.g. `file:///C:/project/src/Foo.js`)
      */
     _pathToUri(filePath) {
       const upath = require("upath");

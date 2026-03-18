@@ -18,9 +18,16 @@ qx.Class.define("qxl.lsp.Project", {
   },
 
   members: {
+    /** @type {string} Absolute path to the workspace root */
     __workspacePath: null,
+
+    /** @type {qxl.lsp.MetaDatabase} Loaded meta database instance */
     __metaDb: null,
+
+    /** @type {import("fs").FSWatcher|null} File system watcher on db.json */
     __watcher: null,
+
+    /** @type {ReturnType<typeof setTimeout>|null} Debounce timer for reload */
     __reloadTimer: null,
 
     /**
