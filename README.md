@@ -50,6 +50,14 @@ The server determines the meta database path by reading the workspace's `compile
 - Visual Studio Code 1.75 or later
 - A Qooxdoo project that has been compiled at least once (`compiled/meta/db.json` must exist)
 
+> **Important:** The target Qooxdoo project's `compile.json` must include the `meta` section to enable meta database generation:
+> ```json
+> "meta": {
+>   "typescript": true
+> }
+> ```
+> Without this entry, the compiler will not produce `compiled/meta/` and the LSP server will have no data to work with.
+
 ## Local Deployment
 
 ### 1. Install server dependencies

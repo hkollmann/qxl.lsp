@@ -1,3 +1,24 @@
+/* ************************************************************************
+ *
+ *    qxl.lsp - Qooxdoo Language Server Protocol implementation
+ *
+ *    https://github.com/hkollmann/qxl.lsp
+ *
+ *    Copyright:
+ *      2026 Henner Kollmann
+ *
+ *    License:
+ *      MIT: https://opensource.org/licenses/MIT
+ *
+ *      This software is provided under the same licensing terms as Qooxdoo,
+ *      please see the LICENSE file in the Qooxdoo project's top-level directory
+ *      for details.
+ *
+ *    Authors:
+ *      * Henner Kollmann (Henner.Kollmann@gmx.de, @hkollmann)
+ *
+ * ************************************************************************ */
+
 /**
  * Mixin providing URI ↔ filesystem path conversion helpers.
  */
