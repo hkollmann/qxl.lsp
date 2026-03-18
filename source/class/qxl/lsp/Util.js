@@ -26,7 +26,8 @@ qx.Class.define("qxl.lsp.Util", {
      *
      * @param {string[]} lines - Array of source lines.
      * @param {{line: number, character: number}} position - LSP position (0-based).
-     * @returns {{word: string}}
+     * @returns {{word: string, cursorOffset: number}} word is the full dotted identifier,
+     *   cursorOffset is the 0-based character offset of the cursor within that word.
      */
     getWordAtPosition(lines, position) {
       const line = lines[position.line] || "";
@@ -43,10 +44,10 @@ qx.Class.define("qxl.lsp.Util", {
 
       const word = line.slice(start, end);
       if (!word) {
-        return { word: "" };
+        return { word: "", cursorOffset: 0 };
       }
 
-      return { word };
+      return { word, cursorOffset: char - start };
     }
   }
 });

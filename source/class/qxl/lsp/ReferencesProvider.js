@@ -11,10 +11,10 @@ qx.Class.define("qxl.lsp.ReferencesProvider", {
      * Handles a textDocument/references LSP request.
      *
      * @param {object} params - LSP ReferenceParams
-     * @param {qxl.lsp.Project} project - The loaded project instance
+     * @param {string} wsPath - Absolute workspace root path
      * @returns {object[]|null} Array of LSP Location objects or null
      */
-    provideReferences(params, project) {
+    provideReferences(params, wsPath) {
       const fs = require("fs");
 
       const filePath = this._uriToPath(params.textDocument.uri);
@@ -31,7 +31,6 @@ qx.Class.define("qxl.lsp.ReferencesProvider", {
         return null;
       }
 
-      const wsPath = project.getWorkspacePath();
       const jsFiles = this.__collectJsFiles(wsPath);
       const results = [];
 

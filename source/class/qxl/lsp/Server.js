@@ -29,9 +29,15 @@ qx.Class.define("qxl.lsp.Server", {
       const connection = createConnection(ProposedFeatures.all);
       const documents = new TextDocuments(TextDocument);
 
-      let project = null;
+      let db = null;
+      let wsPath = null;
+
       const definitionProvider = new qxl.lsp.DefinitionProvider();
       const referencesProvider = new qxl.lsp.ReferencesProvider();
+      const hoverProvider = new qxl.lsp.HoverProvider();
+      const documentSymbolsProvider = new qxl.lsp.DocumentSymbolsProvider();
+      const completionProvider = new qxl.lsp.CompletionProvider();
+      const workspaceSymbolsProvider = new qxl.lsp.WorkspaceSymbolsProvider();
 
       connection.onInitialize(params => {
         const workspaceFolders = params.workspaceFolders;
@@ -39,11 +45,12 @@ qx.Class.define("qxl.lsp.Server", {
           const wsUri = workspaceFolders[0].uri;
           const path = require("upath");
           const { fileURLToPath } = require("url");
-          const wsPath = path.normalize(fileURLToPath(wsUri));
+          wsPath = path.normalize(fileURLToPath(wsUri));
           process.stdout.write(`[qxl.lsp] Initializing project for workspace folder: ${wsPath}\n`);
-          project = new qxl.lsp.Project(wsPath);
+          const project = new qxl.lsp.Project(wsPath);
           try {
             project.load();
+            db = project.getMetaDatabase();
           } catch (e) {
             process.stderr.write(`[qxl.lsp] project.load() failed: ${e.message}\n`);
           }
@@ -54,17 +61,19 @@ qx.Class.define("qxl.lsp.Server", {
             textDocumentSync: TextDocumentSyncKind.Incremental,
             definitionProvider: true,
             declarationProvider: true,
-            referencesProvider: true
+            referencesProvider: true,
+            hoverProvider: true,
+            documentSymbolProvider: true,
+            completionProvider: { triggerCharacters: ["."] },
+            workspaceSymbolProvider: true
           }
         };
       });
 
       connection.onDefinition(params => {
-        if (!project) {
-          return null;
-        }
+        if (!db) return null;
         try {
-          return definitionProvider.provideDefinition(params, project);
+          return definitionProvider.provideDefinition(params, db);
         } catch (e) {
           process.stderr.write(`[qxl.lsp] definitionProvider.provideDefinition() failed: ${e.message}\n`);
           return null;
@@ -72,11 +81,9 @@ qx.Class.define("qxl.lsp.Server", {
       });
 
       connection.onDeclaration(params => {
-        if (!project) {
-          return null;
-        }
+        if (!db) return null;
         try {
-          return definitionProvider.provideDeclaration(params, project);
+          return definitionProvider.provideDeclaration(params, db);
         } catch (e) {
           process.stderr.write(`[qxl.lsp] definitionProvider.provideDeclaration() failed: ${e.message}\n`);
           return null;
@@ -84,13 +91,51 @@ qx.Class.define("qxl.lsp.Server", {
       });
 
       connection.onReferences(params => {
-        if (!project) {
-          return null;
-        }
+        if (!wsPath) return null;
         try {
-          return referencesProvider.provideReferences(params, project);
+          return referencesProvider.provideReferences(params, wsPath);
         } catch (e) {
           process.stderr.write(`[qxl.lsp] referencesProvider.provideReferences() failed: ${e.message}\n`);
+          return null;
+        }
+      });
+
+      connection.onHover(params => {
+        if (!db) return null;
+        try {
+          return hoverProvider.provideHover(params, db);
+        } catch (e) {
+          process.stderr.write(`[qxl.lsp] hoverProvider.provideHover() failed: ${e.message}\n`);
+          return null;
+        }
+      });
+
+      connection.onDocumentSymbol(params => {
+        if (!db) return null;
+        try {
+          return documentSymbolsProvider.provideDocumentSymbols(params, db);
+        } catch (e) {
+          process.stderr.write(`[qxl.lsp] documentSymbolsProvider.provideDocumentSymbols() failed: ${e.message}\n`);
+          return null;
+        }
+      });
+
+      connection.onCompletion(params => {
+        if (!db) return null;
+        try {
+          return completionProvider.provideCompletion(params, db);
+        } catch (e) {
+          process.stderr.write(`[qxl.lsp] completionProvider.provideCompletion() failed: ${e.message}\n`);
+          return null;
+        }
+      });
+
+      connection.onWorkspaceSymbol(params => {
+        if (!db) return null;
+        try {
+          return workspaceSymbolsProvider.provideWorkspaceSymbols(params, db);
+        } catch (e) {
+          process.stderr.write(`[qxl.lsp] workspaceSymbolsProvider.provideWorkspaceSymbols() failed: ${e.message}\n`);
           return null;
         }
       });

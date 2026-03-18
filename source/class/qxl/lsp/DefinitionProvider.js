@@ -12,10 +12,10 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
      * Handles a textDocument/definition LSP request.
      *
      * @param {object} params - LSP DefinitionParams
-     * @param {qxl.lsp.Project} project - The loaded project instance
+     * @param {qxl.lsp.MetaDatabase} db
      * @returns {object|null} LSP Location object or null
      */
-    provideDefinition(params, project) {
+    provideDefinition(params, db) {
       const filePath = this._uriToPath(params.textDocument.uri);
       process.stdout.write(`[qxl.lsp.provideDefinition] called for file: ${filePath}\n`);
       if (!fs.existsSync(filePath)) {
@@ -31,7 +31,7 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
         return null;
       }
 
-      const definition = project.findDefinition(word);
+      const definition = db.findDefinition(word);
       if (!definition) {
         return null;
       }
@@ -50,10 +50,10 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
      * Walks the superClass chain to find the topmost (original) definition.
      *
      * @param {object} params - LSP DeclarationParams
-     * @param {qxl.lsp.Project} project - The loaded project instance
+     * @param {qxl.lsp.MetaDatabase} db
      * @returns {object|null} LSP Location object or null
      */
-    provideDeclaration(params, project) {
+    provideDeclaration(params, db) {
       const filePath = this._uriToPath(params.textDocument.uri);
       process.stdout.write(`[qxl.lsp.provideDeclaration] called for file: ${filePath}\n`);
       if (!fs.existsSync(filePath)) {
@@ -69,7 +69,7 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
         return null;
       }
 
-      const definition = project.findSourceDefinition(word);
+      const definition = db.findSourceDefinition(word);
       if (!definition) {
         return null;
       }
