@@ -51,6 +51,9 @@ qx.Class.define("qxl.lsp.Project", {
     /** @type {ReturnType<typeof setTimeout>|null} Debounce timer for reload */
     __reloadTimer: null,
 
+    /** @type {string|null} Aktuell beobachteter Dateipfad */
+    __watchedPath: null,
+
     /**
      * @returns {string} Absolute path to the workspace root.
      */
@@ -89,21 +92,41 @@ qx.Class.define("qxl.lsp.Project", {
         : path.resolve(this.__workspacePath, compileConf.targets[0].outputPath, "../meta");
 
       const dbPath = path.join(metaDir, "db.json");
+
+      if (dbPath !== this.__watchedPath) {
+        this.__setupWatcher(dbPath);
+      }
+
       process.stdout.write(`[qxl.lsp] Loading project meta database from: ${dbPath}\n`);
-      
+
       if (!fs.existsSync(dbPath)) {
-        process.stderr.write(`[qxl.lsp] db.json not found at: ${dbPath}\n`);
+        process.stderr.write(`[qxl.lsp] db.json not found at: ${dbPath}, waiting for creation...\n`);
         return;
       }
       this.__metaDb.load(metaDir);
+    },
+
+    __setupWatcher(dbPath) {
+      const chokidar = require("chokidar");
+
       if (this.__watcher) {
         this.__watcher.close();
         this.__watcher = null;
       }
-      this.__watcher = fs.watch(dbPath, () => {
+
+      const reload = () => {
         clearTimeout(this.__reloadTimer);
         this.__reloadTimer = setTimeout(() => this.load(), 500);
+      };
+
+      this.__watcher = chokidar.watch(dbPath, {
+        persistent: false,
+        ignoreInitial: true,
+        awaitWriteFinish: { stabilityThreshold: 300, pollInterval: 100 }
       });
+      this.__watcher.on("add", reload);
+      this.__watcher.on("change", reload);
+      this.__watchedPath = dbPath;
     }
   }
 });

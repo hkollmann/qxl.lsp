@@ -30,6 +30,7 @@
     "package": "npx qx deploy --clean && npx vsce package --out qxl-lsp-client.vsix"
   },
   "dependencies": {
+    "chokidar": "^3.6.0",
     "upath": "^2.0.1",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "^9.0.1",
