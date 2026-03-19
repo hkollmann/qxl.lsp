@@ -20,6 +20,7 @@
  * ************************************************************************ */
 
 const fs = require("fs");
-const preferred = "./lib/qxl.lsp/index.js";
-process.stdout.write(`[qxl.lsp] Starting server using ${preferred}\n`);
-require(fs.existsSync(preferred) ? preferred : "./compiled/source/qxl.lsp/index.js");
+const preferred = __dirname + "/lib/qxl.lsp/index.js";
+let target = fs.existsSync(preferred) ? preferred : __dirname + "/compiled/source/qxl.lsp/index.js";
+process.stdout.write(`[qxl.lsp] Starting server using ${target}\n`);
+require(target);

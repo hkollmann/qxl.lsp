@@ -89,12 +89,13 @@ qx.Class.define("qxl.lsp.Project", {
         : path.resolve(this.__workspacePath, compileConf.targets[0].outputPath, "../meta");
 
       const dbPath = path.join(metaDir, "db.json");
+      process.stdout.write(`[qxl.lsp] Loading project meta database from: ${dbPath}\n`);
+      
       if (!fs.existsSync(dbPath)) {
+        process.stderr.write(`[qxl.lsp] db.json not found at: ${dbPath}\n`);
         return;
       }
-
       this.__metaDb.load(metaDir);
-
       if (this.__watcher) {
         this.__watcher.close();
         this.__watcher = null;

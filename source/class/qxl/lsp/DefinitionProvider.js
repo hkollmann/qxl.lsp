@@ -38,7 +38,7 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
      */
     provideDefinition(params, db) {
       const filePath = this._uriToPath(params.textDocument.uri);
-      process.stdout.write(`[qxl.lsp.provideDefinition] called for file: ${filePath}\n`);
+      process.stdout.write(`[qxl.lsp] provideDefinition called for file: ${filePath}\n`);
       if (!fs.existsSync(filePath)) {
         return null;
       }
@@ -47,7 +47,7 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
       const lines = content.split("\n");
 
       const { word } = qxl.lsp.Util.getWordAtPosition(lines, params.position);
-      process.stdout.write(`[qxl.lsp.provideDefinition] Extracted word: ${word}\n`);
+      process.stdout.write(`[qxl.lsp] provideDefinition extracted word: ${word}\n`);
       if (!word) {
         return null;
       }
@@ -76,7 +76,7 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
      */
     provideDeclaration(params, db) {
       const filePath = this._uriToPath(params.textDocument.uri);
-      process.stdout.write(`[qxl.lsp.provideDeclaration] called for file: ${filePath}\n`);
+      process.stdout.write(`[qxl.lsp] provideDeclaration called for file: ${filePath}\n`);
       if (!fs.existsSync(filePath)) {
         return null;
       }
@@ -85,7 +85,7 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
       const lines = content.split("\n");
 
       const { word } = qxl.lsp.Util.getWordAtPosition(lines, params.position);
-      process.stdout.write(`[qxl.lsp.provideDeclaration] Extracted word: ${word}\n`);
+      process.stdout.write(`[qxl.lsp] provideDeclaration extracted word: ${word}\n`);
       if (!word) {
         return null;
       }

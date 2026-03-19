@@ -47,7 +47,7 @@ qx.Class.define("qxl.lsp.ReferencesProvider", {
       const lines = content.split("\n");
 
       const { word } = qxl.lsp.Util.getWordAtPosition(lines, params.position);
-      process.stdout.write(`[qxl.lsp.provideReferences] word: ${word}\n`);
+      process.stdout.write(`[qxl.lsp] provideReferences called for word: ${word}\n`);
       if (!word) {
         return null;
       }
@@ -81,7 +81,7 @@ qx.Class.define("qxl.lsp.ReferencesProvider", {
         }
       }
 
-      process.stdout.write(`[qxl.lsp.provideReferences] found ${results.length} references\n`);
+      process.stdout.write(`[qxl.lsp] provideReferences found ${results.length} references\n`);
       return results;
     },
 
