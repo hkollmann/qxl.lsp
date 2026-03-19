@@ -4,11 +4,18 @@ A Language Server Protocol (LSP) implementation for [Qooxdoo](https://qooxdoo.or
 
 ## Features
 
-- **Go to Definition** — Navigate to the definition of any Qooxdoo class, method, static, or property (`Ctrl+Click` / `F12`)
+- **Go to Definition** — Navigate to the definition of any Qooxdoo class, method, static, or property (`Ctrl+Click` / `F12`); also resolves members accessed via local variables (`btn.doSomething` where `btn = new qx.ui.form.Button()`) and jumps to local variable declarations
 - **Go to Declaration** — Jump to the topmost ancestor definition of an overridden member (`Alt+F12`)
 - **Find All References** — Locate every text occurrence of a class or member across all `.js` source files in the workspace (`Shift+F12`)
 - **Hover** — Display inline documentation (description, parameters, return type, deprecation notices, property constraints) when hovering over a symbol
-- **Completion** — IntelliSense for member names after `.` with type-aware resolution (`this.`, `new ClassName()`, getter chains) and class name prefix completion (triggered automatically while typing)
+- **Completion** — IntelliSense for member names after `.` with type-aware resolution:
+  - `this.` → members of the current class
+  - `new ClassName().` → members of that class
+  - `this.getProp().` → members of the `@return` type of `getProp`
+  - `this._field.` → members of the `@type` of `_field` (requires JSDoc)
+  - `localVar.` → members of the type assigned to `localVar` (e.g. `var btn = new qx.ui.form.Button()`)
+  - Complex chains: `this.getA().getB()._field.` via bracket-matching
+  - Class name prefix completion (triggered automatically while typing)
 - **Signature Help** — Method parameter hints when typing `(` or `,`, showing parameter names, types, and documentation from JSDoc
 - **Document Symbols** — Populate the VS Code Outline panel and breadcrumbs with the class and its members for the active file
 - **Workspace Symbols** — Quick-navigate to any class in the workspace by name (`Ctrl+T`)

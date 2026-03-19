@@ -80,6 +80,8 @@ qx.Class.define("qxl.lsp.Util", {
      *   - this:                 `this`                   → class from qx.Class.define in source
      *   - Constructor:          `new qx.ui.form.Button()` → `qx.ui.form.Button`
      *   - Method call chain:    `this.getLayout()`       → @return type of getLayout
+     *   - Member property:      `this._button`           → @type of _button member
+     *   - Local variable:       `btn`                    → type from nearest var/let/const declaration
      *
      * @param {string} expr - Expression to resolve (trimmed).
      * @param {string} sourceText - Full source text of the current file.
@@ -105,22 +107,93 @@ qx.Class.define("qxl.lsp.Util", {
       if (newMatch) return newMatch[1];
 
       // expr.method() → resolve type of expr, then look up @return of method
-      const callMatch = expr.match(/^([\s\S]+)\.([\w$]+)\s*\(\s*\)$/);
+      const callMatch = expr.match(/^([\s\S]+)\.([\w$]+)\s*\([\s\S]*\)$/);
       if (callMatch) {
         const baseType = qxl.lsp.Util.resolveType(callMatch[1], sourceText, db, depth + 1);
-        if (!baseType) return null;
-        const info = db.getSymbolInfo(`${baseType}.${callMatch[2]}`);
-        if (!info || !info.memberName) return null;
-        const classData = db.getClassData(info.definedIn);
-        if (!classData) return null;
-        const memberData =
-          classData.members?.[info.memberName] ??
-          classData.statics?.[info.memberName] ??
-          null;
-        return memberData?.jsdoc?.["@return"]?.[0]?.type ?? null;
+        if (baseType) {
+          const info = db.getSymbolInfo(`${baseType}.${callMatch[2]}`);
+          if (info?.memberName) {
+            const classData = db.getClassData(info.definedIn);
+            if (classData) {
+              const memberData =
+                classData.members?.[info.memberName] ??
+                classData.statics?.[info.memberName] ??
+                null;
+              const ret = memberData?.jsdoc?.["@return"]?.[0]?.type ?? null;
+              if (ret) return ret;
+            }
+          }
+        }
+      }
+
+      // expr.prop (member property access, no call) → resolve base type, look up @type of prop
+      const propMatch = expr.match(/^([\s\S]+)\.([\w$]+)$/);
+      if (propMatch) {
+        const baseType = qxl.lsp.Util.resolveType(propMatch[1], sourceText, db, depth + 1);
+        if (baseType) {
+          let className = baseType;
+          while (className) {
+            const cls = db.getClassData(className);
+            if (!cls) break;
+            const member = cls.members?.[propMatch[2]] ?? cls.statics?.[propMatch[2]];
+            if (member) {
+              return member?.jsdoc?.["@type"]?.[0]?.type ?? null;
+            }
+            className = cls.superClass ?? null;
+          }
+        }
+      }
+
+      // Local variable: search source for nearest (const|let|var) name = <rhs>
+      if (/^[\w$]+$/.test(expr)) {
+        const escaped = expr.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const varRe = new RegExp(
+          `(?:const|let|var)\\s+${escaped}\\s*=\\s*([^;\\n]+)`,
+          "g"
+        );
+        let lastRhs = null;
+        let m;
+        while ((m = varRe.exec(sourceText)) !== null) {
+          lastRhs = m[1].trim();
+        }
+        if (lastRhs) {
+          return qxl.lsp.Util.resolveType(lastRhs, sourceText, db, depth + 1);
+        }
       }
 
       return null;
+    },
+
+    /**
+     * Extracts the expression ending just before the dot at `dotPos` in `line`.
+     * Uses bracket-matching so it correctly handles nested calls like
+     * `this.getManager().getActiveItem()._field`.
+     *
+     * @param {string} line - The source line text.
+     * @param {number} dotPos - Index of the trailing dot in `line`.
+     * @returns {string} The expression string before the dot, or "".
+     */
+    getExpressionBeforeDot(line, dotPos) {
+      let i = dotPos - 1;
+      let depth = 0;
+      while (i >= 0) {
+        const ch = line[i];
+        if (ch === ")" || ch === "]") {
+          depth++;
+          i--;
+        } else if (ch === "(" || ch === "[") {
+          if (depth === 0) break;
+          depth--;
+          i--;
+        } else if (depth > 0) {
+          i--;
+        } else if (/[\w$.]/.test(ch)) {
+          i--;
+        } else {
+          break;
+        }
+      }
+      return line.slice(i + 1, dotPos);
     }
   }
 });

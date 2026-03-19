@@ -52,7 +52,33 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
         return null;
       }
 
-      const definition = db.findDefinition(word);
+      let definition = db.findDefinition(word);
+
+      // Fallback: resolve local variable/property prefix, then look up member
+      if (!definition) {
+        const lastDot = word.lastIndexOf(".");
+        if (lastDot > 0) {
+          const prefix = word.slice(0, lastDot);
+          const memberName = word.slice(lastDot + 1);
+          const resolvedClass = qxl.lsp.Util.resolveType(prefix, content, db);
+          if (resolvedClass) {
+            definition = db.findDefinition(`${resolvedClass}.${memberName}`);
+          }
+        }
+      }
+
+      // Fallback: local variable declaration in current file
+      if (!definition && /^[\w$]+$/.test(word)) {
+        const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const varRe = new RegExp(`(?:const|let|var)\\s+${escaped}\\b`);
+        for (let l = params.position.line; l >= 0; l--) {
+          if (varRe.test(lines[l])) {
+            definition = { file: filePath, line: l };
+            break;
+          }
+        }
+      }
+
       if (!definition) {
         return null;
       }
@@ -90,7 +116,21 @@ qx.Class.define("qxl.lsp.DefinitionProvider", {
         return null;
       }
 
-      const definition = db.findSourceDefinition(word);
+      let definition = db.findSourceDefinition(word);
+
+      // Fallback: resolve local variable/property prefix, then look up member
+      if (!definition) {
+        const lastDot = word.lastIndexOf(".");
+        if (lastDot > 0) {
+          const prefix = word.slice(0, lastDot);
+          const memberName = word.slice(lastDot + 1);
+          const resolvedClass = qxl.lsp.Util.resolveType(prefix, content, db);
+          if (resolvedClass) {
+            definition = db.findSourceDefinition(`${resolvedClass}.${memberName}`);
+          }
+        }
+      }
+
       if (!definition) {
         return null;
       }

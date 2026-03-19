@@ -71,27 +71,37 @@ qx.Class.define("qxl.lsp.CompletionProvider", {
       };
 
       // Case A: after "." — member completion
-      // A1: plain dotted identifier: qx.log.Logger. or this.
-      const dotMatch = charBefore.match(/([\w$][\w$.]*)\.$/);
-      if (dotMatch) {
-        const direct = db.getAllMembersForClass(dotMatch[1]);
-        if (direct.length > 0) return membersToItems(direct);
-        // Fallback: type-aware resolution (handles "this", etc.)
-        const resolved = resolveToMembers(dotMatch[1]);
-        if (resolved) return resolved;
-      }
+      if (charBefore.endsWith(".")) {
+        const dotPos = charBefore.length - 1;
 
-      // A2: call chain ending in ".": word.method(args). or new ClassName(args).
-      const callDotMatch = charBefore.match(/([\w$][\w$.]*\([^()]*\))\.$/);
-      if (callDotMatch) {
-        const resolved = resolveToMembers(callDotMatch[1]);
-        if (resolved) return resolved;
-      }
+        // A1: plain dotted identifier: qx.log.Logger. or this.
+        const dotMatch = charBefore.match(/([\w$][\w$.]*)\.$/);
+        if (dotMatch) {
+          const direct = db.getAllMembersForClass(dotMatch[1]);
+          if (direct.length > 0) return membersToItems(direct);
+          const resolved = resolveToMembers(dotMatch[1]);
+          if (resolved) return resolved;
+        }
 
-      const newDotMatch = charBefore.match(/\b(new\s+[\w.]+\s*\([^()]*\))\.$/);
-      if (newDotMatch) {
-        const resolved = resolveToMembers(newDotMatch[1]);
-        if (resolved) return resolved;
+        // A2: call chain ending in ".": word.method(args). or new ClassName(args).
+        const callDotMatch = charBefore.match(/([\w$][\w$.]*\([^()]*\))\.$/);
+        if (callDotMatch) {
+          const resolved = resolveToMembers(callDotMatch[1]);
+          if (resolved) return resolved;
+        }
+
+        const newDotMatch = charBefore.match(/\b(new\s+[\w.]+\s*\([^()]*\))\.$/);
+        if (newDotMatch) {
+          const resolved = resolveToMembers(newDotMatch[1]);
+          if (resolved) return resolved;
+        }
+
+        // A3: bracket-matching fallback for complex chains like this.getA().getB()._field.
+        const complexExpr = qxl.lsp.Util.getExpressionBeforeDot(charBefore, dotPos);
+        if (complexExpr && complexExpr !== dotMatch?.[1]) {
+          const resolved = resolveToMembers(complexExpr);
+          if (resolved) return resolved;
+        }
       }
 
       // Case B: class name prefix completion
